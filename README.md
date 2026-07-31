@@ -152,11 +152,12 @@ Open the URL in Chrome → tap ⋮ menu → **Add to Home screen** → Add
 | Version | Description |
 |---|---|
 | v1.0 | Initial release — guess grid, word list with frequency gradient + letter tints, letter frequency sidebar, past answer highlighting, PWA |
+| v1.1 | Fix PWA start_url/scope for GitHub Pages subdirectory install; add Settings modal with update checker and cache clear |
 
 **Version is tracked in three places — update all three on each release:**
-1. `<footer>` in `index.html`: `WORDLER v1.0`
-2. `APP_VERSION` constant in JS: `const APP_VERSION = 'v1.0';`
-3. Service worker cache name in `sw.js`: `const VERSION = 'v1.0';`
+1. `<footer>` in `index.html`: `WORDLER v1.1`
+2. `APP_VERSION` constant in JS: `const APP_VERSION = 'v1.1';`
+3. Service worker cache name in `sw.js`: `const VERSION = 'v1.1';`
 
 Download zip naming convention: `wordler-vX.Y.zip`
 

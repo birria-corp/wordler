@@ -1,6 +1,6 @@
-const VERSION = 'v1.0';
+const VERSION = 'v1.1';
 const CACHE = `wordler-${VERSION}`;
-const ASSETS = ['/', '/index.html', '/manifest.json', '/icon-192.png', '/icon-512.png'];
+const ASSETS = ['/wordler/', '/wordler/index.html', '/wordler/manifest.json', '/wordler/icon-192.png', '/wordler/icon-512.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(
