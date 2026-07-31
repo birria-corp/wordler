@@ -1,4 +1,4 @@
-# Wordler v1.0
+# Wordler v1.1
 
 A Wordle helper PWA — enter your guesses, mark tile colors, and instantly filter the remaining possible words. Ranked by English word frequency so the most likely answers appear first.
 
