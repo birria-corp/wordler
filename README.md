@@ -1,4 +1,4 @@
-# Wordler v1.1
+# Wordler v1.2
 
 A Wordle helper PWA — enter your guesses, mark tile colors, and instantly filter the remaining possible words. Ranked by English word frequency so the most likely answers appear first.
 
@@ -153,6 +153,7 @@ Open the URL in Chrome → tap ⋮ menu → **Add to Home screen** → Add
 |---|---|
 | v1.0 | Initial release — guess grid, word list with frequency gradient + letter tints, letter frequency sidebar, past answer highlighting, PWA |
 | v1.1 | Fix PWA start_url/scope for GitHub Pages subdirectory install; add Settings modal with update checker and cache clear |
+| v1.2 | Add Common + Helpful suggestion panes; entropy-based best-guess engine; tap-to-fill word chips; top 500 words shown on load |
 
 **Version is tracked in three places — update all three on each release:**
 1. `<footer>` in `index.html`: `WORDLER v1.1`
