@@ -1,4 +1,4 @@
-const VERSION = 'v1.2';
+const VERSION = 'v1.3';
 const CACHE = `wordler-${VERSION}`;
 const ASSETS = ['/wordler/', '/wordler/index.html', '/wordler/manifest.json', '/wordler/icon-192.png', '/wordler/icon-512.png'];
 
