@@ -1,4 +1,4 @@
-# Wordler v1.3
+# Wordler v1.4
 
 A Wordle helper PWA — enter your guesses, mark tile colors, and instantly filter the remaining possible words. Ranked by English word frequency so the most likely answers appear first.
 
@@ -154,12 +154,13 @@ Open the URL in Chrome → tap ⋮ menu → **Add to Home screen** → Add
 | v1.0 | Initial release — guess grid, word list with frequency gradient + letter tints, letter frequency sidebar, past answer highlighting, PWA |
 | v1.1 | Fix PWA start_url/scope for GitHub Pages subdirectory install; add Settings modal with update checker and cache clear |
 | v1.2 | Add Common + Helpful suggestion panes; entropy-based best-guess engine; tap-to-fill word chips; top 500 words shown on load |
-| v1.3 | Hard mode toggle (REG/HARD); Starters pane with editable words; Best Pair pane; 6 words in Common+Helpful; letter freq + word list populated on load |
+| v1.3 | Hard mode toggle; Starters pane (editable); Best Pair pane; 6 words in Common+Helpful; letter freq + word list populated on load |
+| v1.4 | Version in header; EASY/HARD toggle in header; consolidated Helpful pane (Easy=any word max info, Hard=viable only); Starters+Common left, Helpful right |
 
 **Version is tracked in three places — update all three on each release:**
-1. `<footer>` in `index.html`: `WORDLER v1.1`
-2. `APP_VERSION` constant in JS: `const APP_VERSION = 'v1.1';`
-3. Service worker cache name in `sw.js`: `const VERSION = 'v1.1';`
+1. Footer + header version span in `index.html`
+2. `APP_VERSION` constant in JS: `const APP_VERSION = 'v1.4';`
+3. Service worker cache name in `sw.js`: `const VERSION = 'v1.4';`
 
 Download zip naming convention: `wordler-vX.Y.zip`
 
