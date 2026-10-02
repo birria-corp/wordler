@@ -1,0 +1,39 @@
+name: Update past Wordle answers
+
+on:
+  schedule:
+    - cron: "30 9 * * *"   # Daily at 09:30 UTC (05:30 ET)
+  workflow_dispatch:        # Run manually from the Actions tab
+
+permissions:
+  contents: write
+
+concurrency:
+  group: past-answers
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Fetch missing answers
+        run: python scripts/update_past_answers.py
+
+      - name: Commit if changed
+        run: |
+          if git diff --quiet -- past-answers.json; then
+            echo "No new answers."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add past-answers.json
+          git commit -m "Update past Wordle answers"
+          git push

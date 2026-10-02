@@ -1,173 +1,161 @@
-# Wordler v1.4
+# Wordler v1.5
 
-A Wordle helper PWA — enter your guesses, mark tile colors, and instantly filter the remaining possible words. Ranked by English word frequency so the most likely answers appear first.
+A Wordle helper PWA. Enter your guesses, mark tile colors, and filter the remaining possible words, ranked by how common they are in English.
 
----
-
-## How to Use
-
-1. **Type your guess** in the input box and tap **ADD** (or press Enter)
-2. The word appears in the 6-row guess grid
-3. **Tap each letter tile** to cycle its color:
-   - ⬜ Empty → ⬛ **Gray** (letter not in word)
-   - ⬛ Gray → 🟨 **Yellow** (letter in word, wrong position)
-   - 🟨 Yellow → 🟩 **Green** (correct letter, correct position)
-   - 🟩 Green → ⬜ Empty (reset)
-4. The word list and letter frequency panel update **instantly** after each tap
-5. Tap **NEW PUZZLE** to reset everything
-
----
+**Live:** https://spencer-thompson-2-vu.github.io/wordler/
 
 ## Features
 
-### Word List Panel
-- Shows all remaining possible words after applying your constraints
-- Words ranked **most common → least common** (Google corpus + spoken frequency data)
-- Color gradient: **Yellow** = most common English words, **Red** = least common
-- Each letter within a word has a **heatmap tint**: **Green** = that letter appears frequently across remaining words, **Blue** = appears infrequently — helps you spot which letters are most useful to play next
-- **Blue border** on a word = previously used as an official NYT Wordle answer (fetched daily)
-- Displays up to 500 words; shows count of additional words if more remain
+### Guess grid
 
-### Letter Frequency Panel (right sidebar)
-- Lists every letter that still appears in the remaining word pool, sorted by count descending
-- Bar color matches the green→blue gradient in the word chips — consistent visual language
-- Confirmed green letters are removed (already known); excluded gray letters are removed
-- Use this to decide your next guess: play words that contain the top-listed letters
+1. Type a guess and tap **ADD** (or press Enter). The word fills the next row.
+1. Tap a tile to cycle its color: empty → gray → yellow → green → empty.
+1. Tap **↶** to remove the last row. Its word returns to the input so you can fix a typo.
+1. Tap **NEW PUZZLE** to clear the board.
 
-### Filter Engine
-- **Gray tiles**: removes any word containing that letter (unless the same letter is also marked yellow/green elsewhere in the same guess — handles duplicate letter edge cases correctly)
-- **Yellow tiles**: word must contain that letter, and it cannot appear at that position
-- **Green tiles**: word must have that exact letter at that exact position
-- All constraints are AND'd together across all guesses
+Every pane updates as soon as you tap a tile.
 
-### Past Answers
-- On load, fetches the list of previously used NYT Wordle answers from a public source
-- Cached in `localStorage` with a daily refresh — works offline after first load
-- Words that have already been used as answers are highlighted with a blue border (still shown as valid guesses, just flagged)
+### Mode toggle
 
----
+The **EASY / HARD** toggle in the header changes only the **Helpful** pane:
 
-## Technical Architecture
+- **Easy:** Helpful suggests any valid word that confirms or eliminates the most letters still in play. The suggestion doesn't need to be a possible answer.
+- **Hard:** Helpful suggests only words that are still possible answers, ranked by information gained.
 
-### Stack
-| Layer | Choice | Reason |
-|---|---|---|
-| UI | Vanilla HTML/CSS/JS | Zero build step, single file, fast on mobile |
-| Hosting | GitHub Pages | Free, HTTPS, auto-deploy on push |
-| Installability | PWA (manifest + service worker) | Chrome "Add to Home Screen" on Android |
-| Offline | Service worker cache-first | Works without network after first load |
-| Data | Baked-in JS string | No fetch required for word list, instant startup |
+### Suggestion panes
 
-### File Structure
+| Pane | Contents |
+|---|---|
+| Starters | Up to three saved opening words (default ARISE, COUNT, SLATE). Tap **✎** to edit. |
+| Common | The six most common words in the remaining pool. |
+| Helpful | Six best next guesses for the current mode. |
+
+Tap any suggestion to put it in the guess input. All panes are filled before your first guess; the top 500 words stand in for the answer pool until you mark a tile.
+
+### Possible words
+
+- Shows up to 500 matching words, most common first.
+- **Word color:** yellow (common) to red (rare), on a log scale of the word's absolute frequency rank. Words with no frequency data are red.
+- **Letter tint:** green (letter appears in many remaining words) to blue (few).
+- **Blue border:** the word was a past Wordle answer. NYT now repeats some answers, so a blue border doesn't rule a word out.
+
+### Letters pane
+
+Counts how many remaining words contain each letter, sorted high to low. Excluded letters and confirmed green letters are hidden.
+
+## How it works
+
+### Filter engine
+
+`buildConstraints()` turns marked tiles into four rule sets:
+
+| Rule | Source |
+|---|---|
+| `greenAt[pos]` | Green tile: letter must be at that position. |
+| `notAt[pos]` | Yellow or gray tile: letter can't be at that position. |
+| `minCount[letter]` | Green + yellow tiles of a letter in one guess. |
+| `maxCount[letter]` | Gray tile caps the letter at its green + yellow count in that guess; 0 excludes it. |
+
+This handles duplicate letters. For example, guessing BOBBY with one yellow, one green, and one gray B means the answer has exactly two Bs.
+
+### Helpful scoring
+
+- **Easy:** Each untested letter is worth `min(count, poolSize − count)`. A letter that splits the pool in half is worth the most; a letter in nearly every word, or almost none, is worth little. All 14,855 words are scored, one spelling per letter set, and ties go to the word with higher entropy.
+- **Hard:** Shannon entropy across the 243 possible color patterns, using up to 300 candidates against a 400-word sample of the pool. This is the same idea NYT WordleBot uses.
+
+### Word list and ranking
+
+- **Words:** [tabatkins/wordle-list](https://github.com/tabatkins/wordle-list), 14,855 valid guesses.
+- **Ranking:** [hermitdave/FrequencyWords](https://github.com/hermitdave/FrequencyWords) `en_full` (2018 subtitle corpus). 11,370 words (77%) have frequency data; the rest sort alphabetically after them.
+- Stored inline as the `WORD_LIST_RAW` string in `index.html`. `RANKED_COUNT` marks where ranked words end.
+
+### Past answers
+
+A GitHub Action (`.github/workflows/past-answers.yml`) runs daily at 09:30 UTC. It calls `scripts/update_past_answers.py`, which fetches each missing date from NYT's daily puzzle endpoint through yesterday (US Eastern time) and commits `past-answers.json`. Today's answer is never fetched, so the app can't spoil it.
+
+The app loads `past-answers.json` from the same origin and caches it in `localStorage` for one day.
+
+**First-time setup:** in the repo, open **Actions → Update past Wordle answers → Run workflow**. The first run backfills about 1,900 dates and takes roughly 15 minutes. If the push step fails with a permissions error, open **Settings → Actions → General → Workflow permissions** and select **Read and write permissions**.
+
+> Note: The Action commits to `main`. Always **Pull origin** in GitHub Desktop before you push.
+
+### Service worker
+
+| Request | Strategy |
+|---|---|
+| `index.html`, page navigations, `version.json`, `past-answers.json` | Network first, cache fallback. New deploys show on the next launch. |
+| Icons, manifest | Cache first. |
+
+Cache keys ignore query strings. The cache name is `wordler-<VERSION>`; activating a new version deletes old caches.
+
+### Settings
+
+Tap **⚙ Settings** in the footer to compare your installed version with `version.json`, reload to update, or clear the cache.
+
+### Storage keys
+
+| Key | Contents |
+|---|---|
+| `wordler_starters` | JSON array of up to three starter words. |
+| `wordler_starters_v15` | One-time flag: SLATE was appended to an older two-word list. |
+| `wordler_past_v2` | `{ fetched, words }` cached past answers. |
+
+All reads go through `lsGet()`, which returns a default instead of throwing on bad data.
+
+## File structure
+
 ```
 wordler/
-├── index.html       ← Full app (~111KB, self-contained)
-├── manifest.json    ← PWA manifest (name, icons, display mode)
-├── sw.js            ← Service worker (cache-first, versioned cache)
-├── icon-192.png     ← App icon (192×192)
-├── icon-512.png     ← App icon (512×512)
-└── README.md        ← This file
+├── index.html                       Full app; all CSS and JS inline
+├── manifest.json                    PWA manifest; start_url and scope are /wordler/
+├── sw.js                            Service worker
+├── version.json                     {"version": "X.X"}; read by the update checker
+├── past-answers.json                Past answers by date; written by the Action
+├── icon-192.png                     App icon
+├── icon-512.png                     App icon
+├── icon-maskable-512.png            Android adaptive icon (art inside the safe zone)
+├── scripts/update_past_answers.py   Past-answers fetcher
+├── .github/workflows/past-answers.yml
+├── README.md
+└── CONTEXT.md                       Session context for resuming work in Claude
 ```
 
-### Word List
-- **Source**: [tabatkins/wordle-list](https://github.com/tabatkins/wordle-list) — official Wordle answers + valid guesses (~14,855 words)
-- **Frequency ranking**: Combined from two sources:
-  - [first20hours/google-10000-english](https://github.com/first20hours/google-10000-english) — Google Books n-gram corpus
-  - [hermitdave/FrequencyWords](https://github.com/hermitdave/FrequencyWords) — spoken language frequency (en_50k)
-  - Words ranked by average of both sources; words appearing in neither ranked last
-- **Format**: Single comma-separated string constant `WORD_LIST_RAW`, split at runtime — no JSON parse overhead, compresses well (53% gzip ratio)
+## Update workflow
 
-### JavaScript Functions
-| Function | Purpose |
+1. In GitHub Desktop, **Pull origin**.
+1. Copy the new files into the local repo folder, including the hidden `.github` folder.
+1. Commit with a message such as `v1.5 — <summary>`.
+1. **Push origin**. GitHub Pages updates in about a minute.
+
+### Version bump
+
+Update all of these together:
+
+1. `APP_VERSION` in `index.html` (header and footer read it at load).
+1. `version.json`.
+1. `VERSION` in `sw.js`.
+1. The title and version history in `README.md`, and `CONTEXT.md`.
+
+Zip name: `wordler-vX.Y.zip`.
+
+## Install on Android
+
+1. Open the live URL in Chrome.
+1. Tap **⋮ → Add to Home screen → Add**.
+
+## Version history
+
+| Version | Changes |
 |---|---|
-| `buildGrid()` | Creates 6×5 tile DOM grid |
-| `updateGridDisplay()` | Syncs tile classes/text to state |
-| `onTileClick(e)` | Cycles tile color on tap |
-| `submitGuess()` | Validates and adds a guess row |
-| `buildConstraints()` | Derives gray/yellow/green constraint sets from all guesses |
-| `filterWords()` | Applies constraints to WORDS array, returns filtered list |
-| `computeLetterCounts(filtered)` | Counts unique letter occurrences across filtered words |
-| `wordFreqColor(t)` | Returns RGB color on yellow→red gradient (t=0 most common) |
-| `letterFreqColor(t)` | Returns RGBA color on green→blue gradient (t=0 most frequent) |
-| `renderWordList()` | Renders word chips with frequency gradient and letter tints |
-| `renderLetterFreq()` | Renders letter frequency sidebar bars |
-| `fetchPastAnswers()` | Async: fetches NYT answer list, caches in localStorage |
-| `resetAll()` | Clears all state for a new puzzle |
-| `showToast(msg)` | Displays a timed notification banner |
+| v1.0 | Initial release: guess grid, word list with frequency gradient and letter tints, letters pane, PWA. |
+| v1.1 | Fixed PWA `start_url` and `scope` for the GitHub Pages subdirectory. Added Settings with update check and cache clear. |
+| v1.2 | Added Common and Helpful panes, entropy engine, tap-to-fill chips, top 500 on load. |
+| v1.3 | Added hard mode, editable Starters, Best Pair, six words per pane. |
+| v1.4 | Moved version and EASY/HARD toggle to header. Merged Best Pair into Helpful. Starters and Common on the left, Helpful on the right. |
+| v1.5 | Added SLATE as a third starter, undo, daily past answers via GitHub Action, larger frequency corpus (28% → 77%), absolute-rank colors, maskable icon, `version.json`. Easy Helpful now scores letters confirmed or eliminated across all words. Fixed phone freezes, the top-500 list being wiped, the Letters pane blanking on reset, the stuck update button, stale deploys, duplicate-letter filtering, and crashes from corrupted storage. |
 
-### State Model
-```js
-guesses = [
-  { word: "CRANE", tiles: ["gray", "yellow", "green", "empty", "empty"] },
-  ...
-]
-activeRow = 1  // next row to fill
-```
-Tile states: `"empty"` | `"gray"` | `"yellow"` | `"green"`
+## Known limitations
 
-### Color System
-```
-Word frequency gradient (chip text/border):
-  t=0 (most common) → rgb(181, 159, 59)  // yellow
-  t=1 (least common) → rgb(204, 51, 51)  // red
-
-Letter frequency tint (per-letter background in chip):
-  t=0 (most frequent letter) → rgba(83, 141, 78, 0.35)   // green
-  t=1 (least frequent letter) → rgba(58, 123, 213, 0.35) // blue
-
-Letter panel bars: same green→blue, solid (no alpha)
-```
-
-### Service Worker
-- Cache name: `wordler-v1.0` — update this string on each release to force cache refresh
-- Strategy: cache-first for same-origin assets, network-only for external fetches (past answers API)
-- On activate: purges all caches not matching current version name
-
-### PWA Manifest
-- `display: standalone` — full-screen, no browser chrome
-- `orientation: portrait` — locked portrait on Android
-- `theme_color: #121213` — matches app background (affects Android status bar)
-
----
-
-## Deploy to GitHub Pages
-
-```
-1. Create repo at github.com (public, no auto-init)
-2. Clone in GitHub Desktop
-3. Copy all 6 files into the cloned folder
-4. Commit: "Initial deploy v1.0"
-5. Push to main
-6. Settings → Pages → Source: main / (root) → Save
-7. Live at: https://yourusername.github.io/wordler/
-```
-
-**Install on Android:**
-Open the URL in Chrome → tap ⋮ menu → **Add to Home screen** → Add
-
----
-
-## Versioning
-
-| Version | Description |
-|---|---|
-| v1.0 | Initial release — guess grid, word list with frequency gradient + letter tints, letter frequency sidebar, past answer highlighting, PWA |
-| v1.1 | Fix PWA start_url/scope for GitHub Pages subdirectory install; add Settings modal with update checker and cache clear |
-| v1.2 | Add Common + Helpful suggestion panes; entropy-based best-guess engine; tap-to-fill word chips; top 500 words shown on load |
-| v1.3 | Hard mode toggle; Starters pane (editable); Best Pair pane; 6 words in Common+Helpful; letter freq + word list populated on load |
-| v1.4 | Version in header; EASY/HARD toggle in header; consolidated Helpful pane (Easy=any word max info, Hard=viable only); Starters+Common left, Helpful right |
-
-**Version is tracked in three places — update all three on each release:**
-1. Footer + header version span in `index.html`
-2. `APP_VERSION` constant in JS: `const APP_VERSION = 'v1.4';`
-3. Service worker cache name in `sw.js`: `const VERSION = 'v1.4';`
-
-Download zip naming convention: `wordler-vX.Y.zip`
-
----
-
-## Known Limitations
-
-- Past answers list depends on a public GitHub source being available; falls back gracefully to no highlighting if offline or source unavailable
-- Word frequency data covers ~28% of the 14k word list; remaining words are ranked last (shown in red)
-- Maximum 500 words displayed at once — add more guess constraints to narrow down further
+- The NYT puzzle endpoint is unofficial and could change. If it does, the Action logs errors and the app keeps the last good list.
+- Frequency data comes from film subtitles, so conversational words (GONNA, WANNA) rank high.
+- 23% of words have no frequency data and sort alphabetically at the end.
