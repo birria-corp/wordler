@@ -1,4 +1,4 @@
-# Wordler v1.5
+# Wordler v1.6
 
 A Wordle helper PWA. Enter your guesses, mark tile colors, and filter the remaining possible words, ranked by how common they are in English.
 
@@ -17,7 +17,7 @@ Every pane updates as soon as you tap a tile.
 
 ### Mode toggle
 
-The **EASY / HARD** toggle in the header changes only the **Helpful** pane:
+The **EASY / HARD** toggle in the header (also in Settings) changes only the **Helpful** pane. Your choice is saved.
 
 - **Easy:** Helpful suggests any valid word that confirms or eliminates the most letters still in play. The suggestion doesn't need to be a possible answer.
 - **Hard:** Helpful suggests only words that are still possible answers, ranked by information gained.
@@ -90,7 +90,21 @@ Cache keys ignore query strings. The cache name is `wordler-<VERSION>`; activati
 
 ### Settings
 
-Tap **⚙ Settings** in the footer to compare your installed version with `version.json`, reload to update, or clear the cache.
+Tap **⚙** in the header (or **⚙ Settings** in the footer). Settings are saved on the device.
+
+| Setting | Options | Default | Effect |
+|---|---|---|---|
+| Mode | Easy, Hard | Easy | Same as the header toggle. |
+| Valid words only | On, Off | On | Rejects guesses that aren't in the word list, to catch typos. |
+| Remember puzzle | On, Off | On | Restores today's guesses if the app closes. Clears automatically on a new day. |
+| Edit Starters | — | — | Opens the starter editor. |
+| Past answers | Mark, Hide, Off | Mark | Mark adds a blue border. Hide removes past answers from Possible words, Common, and Helpful (Hard). Off ignores the list. |
+| Refresh | — | — | Re-downloads `past-answers.json` and shows the count and date. |
+| Text size | S, M, L | M | Scales the app with `%` on the root font size (90%, 100%, 112%). |
+| Words in list | 100, 250, 500 | 500 | Caps Possible words; fewer renders faster. |
+| Check for Update | — | — | Compares the installed version with `version.json`, then offers Reload App. |
+| Clear Cache | — | — | Unregisters the service worker, deletes caches, and reloads. |
+| Reset Settings | — | — | Restores the defaults above. Doesn't touch starters. |
 
 ### Storage keys
 
@@ -98,7 +112,9 @@ Tap **⚙ Settings** in the footer to compare your installed version with `versi
 |---|---|
 | `wordler_starters` | JSON array of up to three starter words. |
 | `wordler_starters_v15` | One-time flag: SLATE was appended to an older two-word list. |
-| `wordler_past_v2` | `{ fetched, words }` cached past answers. |
+| `wordler_past_v2` | `{ fetched, updated, words }` cached past answers. |
+| `wordler_settings` | Settings object. Unknown or invalid values fall back to defaults. |
+| `wordler_puzzle` | `{ date, guesses }` for today's puzzle (local date). |
 
 All reads go through `lsGet()`, which returns a default instead of throwing on bad data.
 
@@ -138,6 +154,12 @@ Update all of these together:
 
 Zip name: `wordler-vX.Y.zip`.
 
+### If an update doesn't appear
+
+1. Open **⚙ → Check for Update → Reload App**.
+1. Or swipe the app closed and reopen it. From v1.4 or older, reopen twice.
+1. Or open the live URL in a Chrome tab and pull to refresh.
+
 ## Install on Android
 
 1. Open the live URL in Chrome.
@@ -153,6 +175,7 @@ Zip name: `wordler-vX.Y.zip`.
 | v1.3 | Added hard mode, editable Starters, Best Pair, six words per pane. |
 | v1.4 | Moved version and EASY/HARD toggle to header. Merged Best Pair into Helpful. Starters and Common on the left, Helpful on the right. |
 | v1.5 | Added SLATE as a third starter, undo, daily past answers via GitHub Action, larger frequency corpus (28% → 77%), absolute-rank colors, maskable icon, `version.json`. Easy Helpful now scores letters confirmed or eliminated across all words. Fixed phone freezes, the top-500 list being wiped, the Letters pane blanking on reset, the stuck update button, stale deploys, duplicate-letter filtering, and crashes from corrupted storage. |
+| v1.6 | Added a header ⚙ button and a Settings panel: mode, valid words only, remember puzzle, past answers (mark, hide, off) with refresh, text size, list size, update check, clear cache, reset settings. Mode and puzzle now persist. Fixed the near-invisible footer link and the ADD button clipping at phone width. |
 
 ## Known limitations
 

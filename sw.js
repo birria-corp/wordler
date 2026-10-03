@@ -1,7 +1,7 @@
 // Wordler service worker.
 // Network-first: the app shell (index.html), version.json, past-answers.json.
 // Cache-first: icons and other static assets.
-const VERSION = 'v1.5';
+const VERSION = 'v1.6';
 const CACHE = `wordler-${VERSION}`;
 const PRECACHE = ['./', './index.html', './manifest.json', './version.json',
   './icon-192.png', './icon-512.png', './icon-maskable-512.png'];
